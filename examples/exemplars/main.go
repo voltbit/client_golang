@@ -35,6 +35,11 @@ func main() {
 		Buckets: prometheus.ExponentialBuckets(0.1, 1.5, 5),
 	})
 
+	someCounter := prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "heelo_counter",
+		Help: "Hello counter",
+	})
+
 	// Create non-global registry.
 	registry := prometheus.NewRegistry()
 
@@ -43,6 +48,7 @@ func main() {
 		collectors.NewGoCollector(),
 		collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}),
 		requestDurations,
+		someCounter,
 	)
 
 	go func() {
@@ -52,6 +58,7 @@ func main() {
 			requestDurations.(prometheus.ExemplarObserver).ObserveWithExemplar(
 				time.Since(now).Seconds(), prometheus.Labels{"dummyID": fmt.Sprint(rand.Intn(100000))},
 			)
+			someCounter.(prometheus.ExemplarAdder).AddWithExemplar(1, prometheus.Labels{"dummyID": fmt.Sprint(rand.Intn(100000))})
 			time.Sleep(600 * time.Millisecond)
 		}
 	}()
